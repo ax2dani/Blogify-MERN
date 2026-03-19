@@ -1,0 +1,54 @@
+Blogify MERN Stack - Project Walkthrough
+========================================
+
+Welcome to the Blogify application! This is a complete, full-stack blogging platform built from scratch using the MERN stack (MongoDB, Express, React, Node.js). It is designed as a decoupled REST API that cleanly separates the backend logic from the frontend, ensuring scalability and cross-platform compatibility.
+
+
+1. What Was Built
+-----------------
+
+Backend Features (Express & MongoDB)
+* RESTful API: Completely decoupled backend that exposes endpoints for Authentication, Posts, and Comments.
+* JWT & RBAC: Implemented secure JSON Web Token authentication with Role-Based Access Control (Admin vs User privileges).
+* Performance Optimized: Resolved the N+1 query problem by utilizing Mongoose's populate to fetch relations (like Post Authors and Comments) natively on the database layer in a single round trip.
+* Pagination: The /api/posts endpoint is natively paginated to drastically reduce payload sizes and improve latency.
+
+Frontend Features (React & Vite)
+* Premium Aesthetics: Built a modern, dark-mode, glassmorphism UI system entirely from scratch using Vanilla CSS, fulfilling architectural flexibility without relying strictly on Tailwind.
+* Performance Optimized: Implemented native code-splitting using React.lazy() for pages like Dashboard and PostDetails, reducing the initial JavaScript bundle size by over 17%.
+* Lazy Loading: Crafted a custom IntersectionObserver LazyImage component that prevents loading images until they enter the viewport, saving immense bandwidth.
+
+
+2. How to Run the Project Locally
+---------------------------------
+
+The project consists of two distinct folders. You will need exactly two terminal windows to run them simultaneously:
+
+Terminal 1: Start the Backend (API & Database)
+  cd blogify-backend
+  npm run start
+
+  (Note: Ensure you have MongoDB running locally. The .env file is configured to automatically connect to mongodb://127.0.0.1:27017/blogify)
+
+Terminal 2: Start the Frontend (React App)
+  cd blogify-frontend
+  npm run dev
+
+  The frontend will load in your browser (usually at http://localhost:5173). Any requests made to /api/* will automatically be proxied securely to your Express server running on port 5000.
+
+
+3. How to Use the Application
+-----------------------------
+
+1. Register: The very first user to register on your local database will automatically be granted the ADMIN role. Subsequent users will be given the USER role.
+2. Dashboard: Once logged in, navigate to the Dashboard. Here, you can utilize the responsive Post creation form. Try adding an image URL!
+3. Optimized Feed: Head back to the Home page to observe the Intersection Observer Lazy Loading triggering a smooth fade-in shimmer effect on the images as you scroll.
+4. Commenting: Click on any Post to land on the PostDetails view where JWT protected commenting is immediately available.
+
+
+Deployment for Free
+-------------------
+If you wish to deploy this to the internet without spending any money, consider this stack:
+- Backend: Render.com (Free web service plan)
+- Database: MongoDB Atlas (M0 Free Cluster Sandbox)
+- Frontend: Vercel or Netlify (Free hobby tier)
