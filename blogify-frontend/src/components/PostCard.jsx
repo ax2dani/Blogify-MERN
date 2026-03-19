@@ -3,11 +3,15 @@ import LazyImage from './LazyImage';
 
 const PostCard = ({ post, style }) => {
     return (
-        <div className="glass-panel" style={{ 
+        <div style={{ 
             ...style,
             display: 'flex', 
             flexDirection: 'column',
             overflow: 'hidden',
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
             transition: 'transform 0.3s ease, box-shadow 0.3s ease'
         }}
         onMouseEnter={(e) => {
@@ -19,13 +23,15 @@ const PostCard = ({ post, style }) => {
             e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
         }}
         >
-            <div style={{ height: '200px', width: '100%' }}>
-                <LazyImage 
-                    src={post.image || `https://source.unsplash.com/random/800x600/?technology,abstract&sig=${post._id}`} 
-                    alt={post.title}
-                    style={{ height: '100%', width: '100%' }}
-                />
-            </div>
+            {post.image ? (
+                <div style={{ height: '200px', width: '100%', flexShrink: 0 }}>
+                    <LazyImage 
+                        src={post.image} 
+                        alt={post.title}
+                        style={{ height: '100%', width: '100%' }}
+                    />
+                </div>
+            ) : null}
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                     {post.tags?.map((tag, idx) => (
@@ -48,8 +54,15 @@ const PostCard = ({ post, style }) => {
                     {post.content.length > 120 ? post.content.substring(0, 120) + '...' : post.content}
                 </p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
-                        By <span style={{ color: 'var(--accent-primary)' }}>{post.author?.username || 'Unknown'}</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {post.author?.avatar && (
+                            <img 
+                                src={`http://localhost:5000${post.author.avatar}`} 
+                                alt={post.author.username} 
+                                style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} 
+                            />
+                        )}
+                        <span>By <span style={{ color: 'var(--accent-primary)' }}>{post.author?.username || 'Unknown'}</span></span>
                     </span>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                         {new Date(post.createdAt).toLocaleDateString()}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -26,7 +27,14 @@ const Login = () => {
     };
 
     return (
-        <div className="container animate-slide-up" style={{ display: 'flex', justifyContent: 'center', marginTop: '10vh' }}>
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="container" 
+            style={{ display: 'flex', justifyContent: 'center', marginTop: '10vh' }}
+        >
             <div className="glass-panel" style={{ padding: '40px', width: '100%', maxWidth: '400px' }}>
                 <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Welcome Back</h2>
                 
@@ -55,6 +63,9 @@ const Login = () => {
                             placeholder="••••••••"
                         />
                     </div>
+                    <div style={{ textAlign: 'right', marginBottom: '15px' }}>
+                        <Link to="/forgotpassword" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.9rem' }}>Forgot Password?</Link>
+                    </div>
                     <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '10px' }}>
                         Login
                     </button>
@@ -64,7 +75,7 @@ const Login = () => {
                     Don't have an account? <Link to="/register">Sign up</Link>
                 </p>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

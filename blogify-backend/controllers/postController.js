@@ -1,18 +1,28 @@
 const Post = require('../models/Post');
 
-// Get all posts with Pagination and N+1 query optimization (Populate)
+// @desc    Fetch all posts with pagination and search
+// @route   GET /api/posts
+// @access  Public
 const getPosts = async (req, res) => {
     try {
         const pageSize = 10;
         const page = Number(req.query.pageNumber) || 1;
 
-        const count = await Post.countDocuments();
-        // .populate() here avoids N+1 database hits since mongoose aggregates the author references efficiently.
-        const posts = await Post.find()
-            .populate('author', 'username email')
+        const keyword = req.query.keyword
+            ? {
+                  $text: { $search: req.query.keyword }
+              }
+            : {};
+            
+        const tagFilter = req.query.tag ? { tags: req.query.tag } : {};
+
+        const count = await Post.countDocuments({ ...keyword, ...tagFilter });
+        const posts = await Post.find({ ...keyword, ...tagFilter })
+            .select('title content author tags image likes createdAt')
+            .populate('author', 'username avatar')
+            .sort({ createdAt: -1 })
             .limit(pageSize)
-            .skip(pageSize * (page - 1))
-            .sort({ createdAt: -1 });
+            .skip(pageSize * (page - 1));
 
         res.json({ posts, page, pages: Math.ceil(count / pageSize) });
     } catch (error) {
@@ -85,23 +95,71 @@ const updatePost = async (req, res) => {
     }
 };
 
+// @desc    Delete a post
+// @route   DELETE /api/posts/:id
+// @access  Private (Author or Admin)
 const deletePost = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
-
-        if (post) {
-            if (post.author.toString() !== req.user._id.toString() && req.user.role !== 'ADMIN') {
-                return res.status(403).json({ message: 'Not authorized to delete this post' });
-            }
-
-            await post.deleteOne();
-            res.json({ message: 'Post removed' });
-        } else {
-            res.status(404).json({ message: 'Post not found' });
+        
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
         }
+
+        // Check user authorization
+        if (post.author.toString() !== req.user._id.toString() && req.user.role !== 'ADMIN') {
+            return res.status(401).json({ message: 'User not authorized to delete this post' });
+        }
+
+        await post.deleteOne();
+        res.json({ message: 'Post removed' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-module.exports = { getPosts, getPostById, createPost, updatePost, deletePost };
+// @desc    Toggle Like on a post
+// @route   POST /api/posts/:id/like
+// @access  Private
+const toggleLike = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        const index = post.likes.indexOf(req.user._id);
+        if (index === -1) {
+            // Not liked yet, add user ID
+            post.likes.push(req.user._id);
+
+            // Trigger Notification
+            if (post.author.toString() !== req.user._id.toString()) {
+                const Notification = require('../models/Notification');
+                await Notification.create({
+                    recipient: post.author,
+                    sender: req.user._id,
+                    type: 'LIKE',
+                    post: post._id
+                });
+            }
+        } else {
+            // Already liked, remove user ID
+            post.likes.splice(index, 1);
+        }
+
+        await post.save();
+        res.json(post.likes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = {
+    getPosts,
+    getPostById,
+    createPost,
+    updatePost,
+    deletePost,
+    toggleLike
+};

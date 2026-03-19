@@ -46,20 +46,7 @@ const LazyImage = ({ src, alt, style, className }) => {
                 />
             )}
             {!isLoaded && (
-                <div style={{
-                    position: 'absolute',
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%)',
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 1.5s infinite linear'
-                }}>
-                    <style>{`
-                        @keyframes shimmer {
-                            0% { background-position: -200% 0; }
-                            100% { background-position: 200% 0; }
-                        }
-                    `}</style>
-                </div>
+                <div className="shimmer-bg"></div>
             )}
         </div>
     );

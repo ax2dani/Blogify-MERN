@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
+import BackButton from '../components/BackButton';
 
 const Dashboard = () => {
     const { user } = useAuth();
@@ -13,6 +15,7 @@ const Dashboard = () => {
     const [image, setImage] = useState('');
     const [message, setMessage] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         if (!user) {
@@ -41,10 +44,35 @@ const Dashboard = () => {
         setLoading(false);
     };
 
+    const uploadFileHandler = async (e) => {
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        setUploading(true);
+        setMessage(null);
+
+        try {
+            const config = { headers: { 'Content-Type': 'multipart/form-data' } };
+            const { data } = await axios.post('/api/upload', formData, config);
+            setImage(data); // e.g. /uploads/image-xyz.jpg
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Image upload failed. Images only!' });
+        }
+        setUploading(false);
+    };
+
     if (!user) return null;
 
     return (
-        <div className="container animate-slide-up" style={{ padding: '40px 24px' }}>
+        <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.4 }}
+            className="container" 
+            style={{ padding: '40px 24px' }}
+        >
+            <BackButton />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
                 <div>
                     <h1 style={{ fontSize: '2.5rem' }}>Dashboard</h1>
@@ -75,40 +103,38 @@ const Dashboard = () => {
                             <input type="text" className="form-control" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Amazing Architecture Patterns" />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Image URL (Optional)</label>
-                            <input type="url" className="form-control" value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://example.com/image.jpg" />
+                            <label className="form-label">Cover Image</label>
+                            <input 
+                                type="file" 
+                                className="form-control" 
+                                onChange={uploadFileHandler} 
+                                accept="image/*"
+                            />
+                            {uploading && <p style={{ color: 'var(--accent-primary)', marginTop: '10px' }}>Uploading image...</p>}
+                            {image && <p style={{ color: 'var(--success)', marginTop: '10px' }}>Image uploaded successfully! ({image})</p>}
                         </div>
                         <div className="form-group">
                             <label className="form-label">Tags (comma separated)</label>
                             <input type="text" className="form-control" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="tech, coding, react" />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group" style={{ marginBottom: '40px' }}>
                             <label className="form-label">Content</label>
-                            <textarea className="form-control" rows="8" value={content} onChange={(e) => setContent(e.target.value)} required placeholder="Write your thoughts here..." style={{ resize: 'vertical' }}></textarea>
+                            <textarea
+                                className="form-control"
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                style={{ height: '300px', resize: 'vertical' }}
+                                required
+                                placeholder="Write your brilliant article here... (Newlines are preserved!)"
+                            />
                         </div>
                         <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
                             {loading ? 'Publishing...' : 'Publish Post'}
                         </button>
                     </form>
                 </div>
-
-                <div className="glass-panel" style={{ padding: '30px', height: 'fit-content' }}>
-                    <h2 style={{ marginBottom: '20px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>Quick Stats</h2>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Since this is a portfolio project, your dashboard represents a consolidated API endpoint architecture reducing fetch overhead.</p>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 500 }}>Active Role</span>
-                            <span style={{ color: 'var(--accent-secondary)' }}>{user.role}</span>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 500 }}>API Status</span>
-                            <span style={{ color: 'var(--success)' }}>Online</span>
-                        </div>
-                    </div>
-                </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

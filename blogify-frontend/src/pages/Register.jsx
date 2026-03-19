@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
 
 const Register = () => {
     const [username, setUsername] = useState('');
@@ -27,7 +28,14 @@ const Register = () => {
     };
 
     return (
-        <div className="container animate-slide-up animate-delay-1" style={{ display: 'flex', justifyContent: 'center', marginTop: '10vh' }}>
+        <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.4 }}
+            className="container" 
+            style={{ display: 'flex', justifyContent: 'center', marginTop: '10vh' }}
+        >
             <div className="glass-panel" style={{ padding: '40px', width: '100%', maxWidth: '400px' }}>
                 <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Join Blogify</h2>
                 
@@ -76,7 +84,7 @@ const Register = () => {
                     Already have an account? <Link to="/login">Sign in</Link>
                 </p>
             </div>
-        </div>
+        </motion.div>
     );
 };
 
