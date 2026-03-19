@@ -181,16 +181,6 @@ Navigate to **http://localhost:5173** — the Vite dev server automatically prox
 
 ---
 
-## 🚢 Deployment
-
-| Service | Layer | Cost |
-|---------|-------|------|
-| [Render](https://render.com) | Backend API | Free |
-| [MongoDB Atlas](https://www.mongodb.com/atlas) | Database | Free (M0 Sandbox) |
-| [Vercel](https://vercel.com) or [Netlify](https://netlify.com) | Frontend SPA | Free |
-
----
-
 ## 📜 Version History
 
 | Version | Highlights |
