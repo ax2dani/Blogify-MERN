@@ -193,12 +193,6 @@ Navigate to **http://localhost:5173** — the Vite dev server automatically prox
 
 ---
 
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
----
-
 <div align="center">
   <sub>Built with ❤️ using the MERN Stack</sub>
 </div>
