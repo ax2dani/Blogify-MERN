@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import { PenTool } from 'lucide-react';
 import BackButton from '../components/BackButton';
+import RichEditor from '../components/RichEditor';
 
 const EditPost = () => {
     const { id } = useParams();
@@ -61,8 +63,8 @@ const EditPost = () => {
             if (imageFile) {
                 const formData = new FormData();
                 formData.append('image', imageFile);
-                const uploadRes = await axios.post('/api/upload', formData, config);
-                imagePath = uploadRes.data.imagePath;
+                const { data } = await axios.post('/api/upload', formData, config);
+                imagePath = data;
             }
 
             const payload = {
@@ -73,7 +75,7 @@ const EditPost = () => {
             };
 
             await axios.put(`/api/posts/${id}`, payload, config);
-            navigate(`/post/${id}`);
+            navigate(`/post/${id}`, { replace: true });
         } catch (error) {
             alert('Failed to update post');
         }
@@ -135,15 +137,8 @@ const EditPost = () => {
                     </div>
                     
                     <div className="form-group">
-                        <label className="form-label">Content Layout (HTML Supported)</label>
-                        <textarea 
-                            className="form-control" 
-                            rows="15" 
-                            value={content} 
-                            onChange={(e) => setContent(e.target.value)} 
-                            required 
-                            placeholder="<p>Draft your masterpiece here...</p>"
-                        />
+                        <label className="form-label">Content Layout</label>
+                        <RichEditor content={content} onChange={setContent} />
                     </div>
                     
                     <div style={{ display: 'flex', gap: '15px' }}>

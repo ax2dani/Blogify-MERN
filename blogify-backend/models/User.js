@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema(
         },
         interests: [{ type: String }],
         bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
+        following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
         resetPasswordToken: String,
         resetPasswordExpire: Date
     },

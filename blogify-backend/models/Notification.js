@@ -15,11 +15,11 @@ const notificationSchema = mongoose.Schema(
         type: {
             type: String,
             required: true,
-            enum: ['LIKE', 'COMMENT']
+            enum: ['LIKE', 'COMMENT', 'FOLLOW']
         },
         post: {
             type: mongoose.Schema.Types.ObjectId,
-            required: true,
+            required: false,
             ref: 'Post'
         },
         isRead: {

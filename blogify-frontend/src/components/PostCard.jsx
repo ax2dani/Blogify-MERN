@@ -51,7 +51,10 @@ const PostCard = ({ post, style }) => {
                     </Link>
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px', flexGrow: 1 }}>
-                    {post.content.length > 120 ? post.content.substring(0, 120) + '...' : post.content}
+                    {(() => {
+                        const plainText = post.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                        return plainText.length > 120 ? plainText.substring(0, 120) + '...' : plainText;
+                    })()}
                 </p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
                     <span style={{ fontSize: '0.85rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>

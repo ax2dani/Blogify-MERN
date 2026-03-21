@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { MapPin, User as UserIcon, Calendar, Clock, Edit2 } from 'lucide-react';
+import { MapPin, User as UserIcon, Calendar, Clock, Edit2, UserPlus, UserCheck } from 'lucide-react';
 import BackButton from '../components/BackButton';
 
 const Profile = () => {
@@ -15,6 +15,9 @@ const Profile = () => {
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('posts');
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followerCount, setFollowerCount] = useState(0);
+    const [followingCount, setFollowingCount] = useState(0);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -23,18 +26,45 @@ const Profile = () => {
                 setProfile(data.user);
                 setPosts(data.posts);
                 setComments(data.comments);
+                setFollowerCount(data.user.followers?.length || 0);
+                setFollowingCount(data.user.following?.length || 0);
             } catch (err) {
                 console.error("Failed to fetch profile", err);
             }
             setLoading(false);
         };
         fetchProfile();
+
+        if (currentUser && currentUser.username !== username) {
+            const fetchFollowStatus = async () => {
+                try {
+                    const { data } = await axios.get(`/api/profiles/${username}`);
+                    const profileUser = data.user;
+                    const { data: followData } = await axios.get(`/api/follow/${profileUser._id}/status`, {
+                        headers: { Authorization: `Bearer ${currentUser.token}` }
+                    });
+                    setIsFollowing(followData.following);
+                } catch (err) {}
+            };
+            fetchFollowStatus();
+        }
     }, [username]);
 
     if (loading) return <div className="container" style={{ textAlign: 'center', marginTop: '20vh' }}><h2>Loading Identity...</h2></div>;
     if (!profile) return <div className="container" style={{ textAlign: 'center', marginTop: '20vh' }}><h2>User Not Found</h2></div>;
 
     const isOwner = currentUser && currentUser.username === profile.username;
+
+    const handleFollow = async () => {
+        if (!currentUser) return;
+        try {
+            const { data } = await axios.post(`/api/follow/${profile._id}`, {}, {
+                headers: { Authorization: `Bearer ${currentUser.token}` }
+            });
+            setIsFollowing(data.following);
+            setFollowerCount(data.followerCount);
+        } catch (err) {}
+    };
 
     return (
         <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px' }}>
@@ -71,6 +101,16 @@ const Profile = () => {
                 </div>
 
                 <h1 style={{ fontSize: '2.5rem', marginBottom: '10px', zIndex: 1 }}>{profile.username}</h1>
+                <div style={{ display: 'flex', gap: '24px', marginBottom: '12px', zIndex: 1 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}><strong style={{ color: 'var(--text-primary)' }}>{followerCount}</strong> followers</span>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}><strong style={{ color: 'var(--text-primary)' }}>{followingCount}</strong> following</span>
+                </div>
+                {currentUser && !isOwner && (
+                    <button onClick={handleFollow} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '20px', border: `1px solid ${isFollowing ? 'var(--glass-border)' : 'var(--accent-primary)'}`, background: isFollowing ? 'transparent' : 'rgba(59,130,246,0.1)', color: isFollowing ? 'var(--text-secondary)' : 'var(--accent-primary)', cursor: 'pointer', fontWeight: 600, marginBottom: '16px', transition: 'all 0.2s', zIndex: 1 }}>
+                        {isFollowing ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                        {isFollowing ? 'Following' : 'Follow'}
+                    </button>
+                )}
                 
                 <div style={{ display: 'flex', gap: '20px', color: 'var(--text-secondary)', marginBottom: '20px', zIndex: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><UserIcon size={16} /> {profile.gender || 'Prefer not to say'}</span>

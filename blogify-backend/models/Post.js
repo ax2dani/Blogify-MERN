@@ -7,7 +7,8 @@ const postSchema = mongoose.Schema({
     tags: [{ type: String }],
     image: { type: String },
     comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    status: { type: String, enum: ['draft', 'published'], default: 'published' }
 }, {
     timestamps: true
 });

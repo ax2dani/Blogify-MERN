@@ -1,6 +1,6 @@
 const Post = require('../models/Post');
 
-// @desc    Fetch all posts with pagination and search
+// @desc    Fetch all PUBLISHED posts with pagination and search
 // @route   GET /api/posts
 // @access  Public
 const getPosts = async (req, res) => {
@@ -9,15 +9,14 @@ const getPosts = async (req, res) => {
         const page = Number(req.query.pageNumber) || 1;
 
         const keyword = req.query.keyword
-            ? {
-                  $text: { $search: req.query.keyword }
-              }
+            ? { $text: { $search: req.query.keyword } }
             : {};
             
         const tagFilter = req.query.tag ? { tags: req.query.tag } : {};
+        const filter = { ...keyword, ...tagFilter, status: { $ne: 'draft' } };
 
-        const count = await Post.countDocuments({ ...keyword, ...tagFilter });
-        const posts = await Post.find({ ...keyword, ...tagFilter })
+        const count = await Post.countDocuments(filter);
+        const posts = await Post.find(filter)
             .select('title content author tags image likes createdAt')
             .populate('author', 'username avatar')
             .sort({ createdAt: -1 })
@@ -30,13 +29,16 @@ const getPosts = async (req, res) => {
     }
 };
 
+// @desc    Get a single post by ID
+// @route   GET /api/posts/:id
+// @access  Public
 const getPostById = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id)
-            .populate('author', 'username email')
+            .populate('author', 'username email avatar')
             .populate({
                 path: 'comments',
-                populate: { path: 'author', select: 'username' }
+                populate: { path: 'author', select: 'username avatar' }
             });
 
         if (post) {
@@ -49,18 +51,20 @@ const getPostById = async (req, res) => {
     }
 };
 
+// @desc    Create a post (published or draft)
+// @route   POST /api/posts
+// @access  Private
 const createPost = async (req, res) => {
-    const { title, content, tags, image } = req.body;
-
+    const { title, content, tags, image, status } = req.body;
     try {
         const post = new Post({
             title,
             content,
             tags,
             image,
-            author: req.user._id
+            author: req.user._id,
+            status: status || 'published'
         });
-
         const createdPost = await post.save();
         res.status(201).json(createdPost);
     } catch (error) {
@@ -68,22 +72,36 @@ const createPost = async (req, res) => {
     }
 };
 
-const updatePost = async (req, res) => {
-    const { title, content, tags, image } = req.body;
+// @desc    Get current user's drafts
+// @route   GET /api/posts/my-drafts
+// @access  Private
+const getMyDrafts = async (req, res) => {
+    try {
+        const drafts = await Post.find({ author: req.user._id, status: 'draft' })
+            .select('title createdAt updatedAt')
+            .sort({ updatedAt: -1 });
+        res.json(drafts);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 
+// @desc    Update a post (also used to publish a draft)
+// @route   PUT /api/posts/:id
+// @access  Private
+const updatePost = async (req, res) => {
+    const { title, content, tags, image, status } = req.body;
     try {
         const post = await Post.findById(req.params.id);
-
         if (post) {
-            // Check if right user or admin
             if (post.author.toString() !== req.user._id.toString() && req.user.role !== 'ADMIN') {
                 return res.status(403).json({ message: 'Not authorized to edit this post' });
             }
-
             post.title = title || post.title;
             post.content = content || post.content;
             post.tags = tags || post.tags;
-            post.image = image || post.image;
+            post.image = image !== undefined ? image : post.image;
+            if (status) post.status = status;
 
             const updatedPost = await post.save();
             res.json(updatedPost);
@@ -101,16 +119,10 @@ const updatePost = async (req, res) => {
 const deletePost = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
-        
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
-        }
-
-        // Check user authorization
+        if (!post) return res.status(404).json({ message: 'Post not found' });
         if (post.author.toString() !== req.user._id.toString() && req.user.role !== 'ADMIN') {
             return res.status(401).json({ message: 'User not authorized to delete this post' });
         }
-
         await post.deleteOne();
         res.json({ message: 'Post removed' });
     } catch (error) {
@@ -124,16 +136,11 @@ const deletePost = async (req, res) => {
 const toggleLike = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
-        }
+        if (!post) return res.status(404).json({ message: 'Post not found' });
 
         const index = post.likes.indexOf(req.user._id);
         if (index === -1) {
-            // Not liked yet, add user ID
             post.likes.push(req.user._id);
-
-            // Trigger Notification
             if (post.author.toString() !== req.user._id.toString()) {
                 const Notification = require('../models/Notification');
                 await Notification.create({
@@ -144,12 +151,35 @@ const toggleLike = async (req, res) => {
                 });
             }
         } else {
-            // Already liked, remove user ID
             post.likes.splice(index, 1);
         }
 
         await post.save();
         res.json(post.likes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get recommended posts (same tags, exclude current)
+// @route   GET /api/posts/:id/recommended
+// @access  Public
+const getRecommended = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id).select('tags');
+        if (!post) return res.status(404).json({ message: 'Post not found' });
+
+        const recommended = await Post.find({
+            _id: { $ne: post._id },
+            tags: { $in: post.tags },
+            status: { $ne: 'draft' }
+        })
+            .select('title content author tags image likes createdAt')
+            .populate('author', 'username avatar')
+            .limit(3)
+            .sort({ createdAt: -1 });
+
+        res.json(recommended);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -161,5 +191,7 @@ module.exports = {
     createPost,
     updatePost,
     deletePost,
-    toggleLike
+    toggleLike,
+    getMyDrafts,
+    getRecommended
 };

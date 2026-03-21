@@ -62,7 +62,7 @@ const EditProfile = () => {
                 } 
             };
             await axios.put('/api/profiles/me', formData, config);
-            navigate(`/profile/${user.username}`);
+            navigate(`/profile/${user.username}`, { replace: true });
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to update profile');
         }
